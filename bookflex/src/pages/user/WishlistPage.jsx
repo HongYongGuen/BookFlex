@@ -50,6 +50,16 @@ const WishlistPage = () => {
                     )
                 );
 
+                // 장바구니에 추가 후 위시리스트에서 선택한 아이템 삭제
+                await Promise.all(
+                    selectedItems.map(bookId =>
+                        axiosInstance.delete(`/wishs/${wishlistItems.find(item => item.bookId === bookId).wishId}`)
+                    )
+                );
+
+                // 위시리스트 상태 업데이트
+                setWishlistItems(prevItems => prevItems.filter(item => !selectedItems.includes(item.bookId)));
+
                 alert('선택한 상품이 장바구니에 담겼습니다.');
                 navigate('/main/cart'); // 장바구니 페이지로 이동
             } catch (error) {
