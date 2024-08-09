@@ -1,22 +1,19 @@
 package com.sparta.bookflex.domain.payment.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.bookflex.common.config.TossPaymentConfig;
 import com.sparta.bookflex.common.exception.BusinessException;
 import com.sparta.bookflex.common.exception.ErrorCode;
 import com.sparta.bookflex.common.utill.Timestamped;
 import com.sparta.bookflex.domain.book.entity.Book;
 import com.sparta.bookflex.domain.book.repository.BookRepository;
 import com.sparta.bookflex.domain.coupon.service.CouponService;
-import com.sparta.bookflex.domain.orderbook.dto.OrderStatusRequestDto;
 import com.sparta.bookflex.domain.orderbook.emuns.OrderState;
 import com.sparta.bookflex.domain.orderbook.entity.OrderBook;
 import com.sparta.bookflex.domain.orderbook.entity.OrderItem;
 import com.sparta.bookflex.domain.orderbook.service.OrderBookService;
-import com.sparta.bookflex.domain.payment.dto.*;
+import com.sparta.bookflex.domain.payment.dto.FailPayReqDto;
+import com.sparta.bookflex.domain.payment.dto.SuccessPayReqDto;
 import com.sparta.bookflex.domain.payment.entity.Payment;
-import com.sparta.bookflex.domain.payment.enums.PayType;
 import com.sparta.bookflex.domain.payment.enums.PaymentStatus;
 import com.sparta.bookflex.domain.payment.repository.PaymentRepository;
 import com.sparta.bookflex.domain.sale.entity.Sale;
@@ -25,21 +22,11 @@ import com.sparta.bookflex.domain.user.entity.User;
 import com.sparta.bookflex.domain.user.service.AuthService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.json.simple.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Service
@@ -47,7 +34,6 @@ import java.util.List;
 public class PaymentService {
 
     private String tossSecretKey="sk_test_w5lNQylNqa5lNQe013Nq";
-    private final RestTemplate restTemplate;
     private final AuthService authService;
     private final PaymentRepository paymentRepository;
     private final OrderBookService orderBookService;
@@ -55,6 +41,7 @@ public class PaymentService {
     private final CouponService couponService;
     private final BookRepository bookRepository;
     private final SaleRepository saleRepository;
+
 
     @Value("${payment.toss.success_url}")
     private String successUrl;
@@ -198,7 +185,9 @@ public class PaymentService {
         paymentRepository.save(payment);
         List<OrderItem> orderItemList = orderBook.getOrderItemList();
         for(OrderItem orderItem : orderItemList){
-            Book book = orderItem.getBook();
+            Book book = bookRepository.findByIdForUpdate(orderItem.getBook().getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+
             book.decreaseStock(orderItem.getQuantity());
             bookRepository.save(book);
         }
