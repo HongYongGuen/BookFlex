@@ -37,6 +37,18 @@ const BookDetailPage = () => {
         }
     };
 
+    const handleAddToWishlist = async () => {
+        try {
+            await axiosInstance.post(`/wishs/${bookId}`);
+            const shouldNavigate = window.confirm("위시리스트로 이동하시겠습니까?");
+            if (shouldNavigate) {
+                navigate('/main/wishlist'); // 위시리스트 페이지로 이동
+            }
+        } catch (error) {
+            console.log("위시리스트 담기 실패", error);
+        }
+    };
+
     const handleQuantityChange = (e) => {
         setQuantity(Number(e.target.value));
     };
@@ -75,6 +87,8 @@ const BookDetailPage = () => {
                         />
                     </div>
                     <button onClick={handleAddToCart} className={styles.addToCartButton}>Add to Cart</button>
+                    <button onClick={handleAddToWishlist} className={styles.addToWishlistButton}>Add to Wishlist
+                    </button>
                 </div>
             </div>
         </div>
